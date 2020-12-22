@@ -9,7 +9,7 @@ SCKEY = os.environ.get('SCKEY')
 #推送url
 scurl = f"https://sc.ftqq.com/{SCKEY}.send"
 
-def C189Checkin(*args):
+def main(username:str, password:str):
     try:
         msg = ""
         s = login(username, password)
@@ -40,9 +40,12 @@ def C189Checkin(*args):
         #第一次抽奖
         response = s.get(url,headers=headers,timeout=20)
         if ("errorCode" in response.text):
-            if(response.json()['errorCode'] == "User_Not_Chance"):
+            if("User_Not_Chance" in response.text):
                 print("抽奖次数不足")
                 msg += "抽奖次数不足,"
+            elif("InternalError" in response.text):
+                print("内部错误，可能是活动下线")
+                msg += "内部错误，可能是活动下线,"
             else:
                 print(response.text)
                 msg += "第一次抽奖出错,"
@@ -60,9 +63,12 @@ def C189Checkin(*args):
         #第二次抽奖
         response = s.get(url2,headers=headers,timeout=20)
         if ("errorCode" in response.text):
-            if(response.json()['errorCode'] == "User_Not_Chance"):
+            if("User_Not_Chance" in response.text):
                 print("抽奖次数不足")
                 msg += "抽奖次数不足,"
+            elif("InternalError" in response.text):
+                print("内部错误，可能是活动下线")
+                msg += "内部错误，可能是活动下线,"
             else:
                 print(response.text)
                 msg += "第二次抽奖出错,"
@@ -85,7 +91,7 @@ def C189Checkin(*args):
                 }
             sc = requests.post(scurl, data=data)
         msg += "天翼云签到出错："+repr(e)
-    return msg
+    return msg + "\n"
 
 BI_RM = list("0123456789abcdefghijklmnopqrstuvwxyz")
 def int2char(a):
@@ -177,6 +183,24 @@ def login(username, password):
     redirect_url = r.json()['toUrl']
     r = s.get(redirect_url)
     return s
+
+def C189Checkin(*args):
+    msg = ""
+    global username, password
+    ulist = username.split("\n")
+    plist = password.split("\n")
+    if len(ulist) == len(plist):
+        i = 0
+        while i < len(ulist):
+            msg += f"第 {i+1} 个账号开始执行任务\n"
+            username = ulist[i]
+            password = plist[i]
+            msg += main(username, password)
+            i += 1
+    else:
+        msg = "账号密码个数不相符"
+        print(msg)
+    return msg
 
 if __name__ == "__main__":
     if username and password:
